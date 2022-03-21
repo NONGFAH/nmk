@@ -78,22 +78,22 @@ func MouseMonitor(fc MonitorWorkerFunc) {
 				event = Event{EvMouseWheelMove, 0, Value(m.MouseData)}
 				break
 			case types.WM_LBUTTONDOWN:
-				event = Event{EvKey, Code(types.VK_LBUTTON), KeyDown}
+				event = Event{EvMouseKey, Code(types.VK_LBUTTON), KeyDown}
 				break
 			case types.WM_RBUTTONDOWN:
-				event = Event{EvKey, Code(types.VK_RBUTTON), KeyDown}
+				event = Event{EvMouseKey, Code(types.VK_RBUTTON), KeyDown}
 				break
 			case types.WM_MBUTTONDOWN:
-				event = Event{EvKey, Code(types.VK_MBUTTON), KeyDown}
+				event = Event{EvMouseKey, Code(types.VK_MBUTTON), KeyDown}
 				break
 			case types.WM_LBUTTONUP:
-				event = Event{EvKey, Code(types.VK_LBUTTON), KeyUp}
+				event = Event{EvMouseKey, Code(types.VK_LBUTTON), KeyUp}
 				break
 			case types.WM_RBUTTONUP:
-				event = Event{EvKey, Code(types.VK_RBUTTON), KeyUp}
+				event = Event{EvMouseKey, Code(types.VK_RBUTTON), KeyUp}
 				break
 			case types.WM_MBUTTONUP:
-				event = Event{EvKey, Code(types.VK_MBUTTON), KeyUp}
+				event = Event{EvMouseKey, Code(types.VK_MBUTTON), KeyUp}
 				break
 			// todo 增加鼠标侧键按钮
 			//case types.WM_SBUTTONDOWN:
@@ -144,7 +144,7 @@ func KeyboardMonitor(fc MonitorWorkerFunc) {
 				continue
 			}
 			pool.JobQueue <- func() {
-				fc(Event{EvKey, Code(k.ScanCode), value})
+				fc(Event{EvKeyboardKey, Code(k.ScanCode), value})
 			}
 		}
 	}
@@ -188,32 +188,27 @@ func Input(event Event) error {
 			return err
 		}
 		break
-	case EvKey:
-		switch event.Code {
-		case Code(types.VK_LBUTTON), Code(types.VK_RBUTTON), Code(types.VK_MBUTTON):
-			if err := mouseKeyPress(event.Code, event.Value == KeyDown); err != nil {
-				return err
-			}
+	case EvMouseKey:
+		if err := mouseKeyPress(event.Code, event.Value == KeyDown); err != nil {
+			return err
+		}
+		break
+	case EvKeyboardKey:
+		vkCode, ok := scanCode2VkCodeMap[event.Code]
+		if !ok {
+			fmt.Println("failed to map scanCode to vkCode, unknown error")
 			break
-		case Code(types.VK_XBUTTON1), Code(types.VK_XBUTTON2):
-			break
-		default:
-			vkCode, ok := scanCode2VkCodeMap[event.Code]
-			if !ok {
-				fmt.Println("failed to map scanCode to vkCode, unknown error")
-				break
-			}
-			param := types.KBDLLHOOKSTRUCT{
-				VKCode:      vkCode,
-				ScanCode:    uint32(event.Code),
-				Flags:       uint32(event.Value),
-				Time:        0,
-				DWExtraInfo: 0,
-			}
-			err := keyboard.Input(param)
-			if err != nil {
-				return err
-			}
+		}
+		param := types.KBDLLHOOKSTRUCT{
+			VKCode:      vkCode,
+			ScanCode:    uint32(event.Code),
+			Flags:       uint32(event.Value),
+			Time:        0,
+			DWExtraInfo: 0,
+		}
+		err := keyboard.Input(param)
+		if err != nil {
+			return err
 		}
 	}
 	return nil

@@ -1,0 +1,21 @@
+syntax = "proto3";
+option java_multiple_files = true;
+option go_package = "github.com/nongfah/nmk/grpc";
+import "google/protobuf/empty.proto";
+
+service NMkGrpc{
+  rpc control (stream EventStreamRequest) returns (google.protobuf.Empty) {};
+}
+
+message EventStreamRequest {
+  Type type = 1;
+  sint32 code = 2;
+  sint32 value = 3;
+}
+
+enum Type{
+  EvMouseMove = 0;
+  EvMouseWheelMove = 1;
+  EvMouseKey = 2;
+  EvKeyboardKey = 3;
+}
