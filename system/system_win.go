@@ -144,7 +144,7 @@ func KeyboardMonitor(fc MonitorWorkerFunc) {
 				continue
 			}
 			pool.JobQueue <- func() {
-				fc(Event{EvKeyboardKey, Code(k.ScanCode), value})
+				fc(Event{EvKeyboardKey, Code(k.VKCode), value})
 			}
 		}
 	}
@@ -194,14 +194,14 @@ func Input(event Event) error {
 		}
 		break
 	case EvKeyboardKey:
-		vkCode, ok := scanCode2VkCodeMap[event.Code]
+		scanCode, ok := vkCode2ScanCodeMap[event.Code]
 		if !ok {
-			fmt.Println("failed to map scanCode to vkCode, unknown error")
+			fmt.Println("failed to map vkCode to scanCode, unknown error")
 			break
 		}
 		param := types.KBDLLHOOKSTRUCT{
-			VKCode:      vkCode,
-			ScanCode:    uint32(event.Code),
+			VKCode:      types.VKCode(event.Code),
+			ScanCode:    uint32(scanCode),
 			Flags:       uint32(event.Value),
 			Time:        0,
 			DWExtraInfo: 0,
