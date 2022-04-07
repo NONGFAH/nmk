@@ -22,7 +22,12 @@ func mouseHookHandler(c chan<- types.MouseEvent) types.HOOKPROC {
 				Message:        types.Message(wParam),
 				MSLLHOOKSTRUCT: *(*types.MSLLHOOKSTRUCT)(unsafe.Pointer(lParam)),
 			}
-			c <- event
+			select {
+			case c <- event:
+				break
+			default:
+				fmt.Println("队列满，忽略操作")
+			}
 			// todo 出屏事件处理
 			if event.X == 0 {
 				lock()
@@ -37,9 +42,15 @@ func mouseHookHandler(c chan<- types.MouseEvent) types.HOOKPROC {
 func keyboardHookHandler(c chan<- types.KeyboardEvent) types.HOOKPROC {
 	return func(code int32, wParam, lParam uintptr) uintptr {
 		if lParam != 0 {
-			c <- types.KeyboardEvent{
+			event := types.KeyboardEvent{
 				Message:         types.Message(wParam),
 				KBDLLHOOKSTRUCT: *(*types.KBDLLHOOKSTRUCT)(unsafe.Pointer(lParam)),
+			}
+			select {
+			case c <- event:
+				break
+			default:
+				fmt.Println("队列满，忽略操作")
 			}
 		}
 		win32.CallNextHookEx(0, code, wParam, lParam)
